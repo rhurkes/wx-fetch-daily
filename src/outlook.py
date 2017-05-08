@@ -1,6 +1,8 @@
 import re
 import requests
 
+# TODO calculate highest risk and highest prob for each risk type
+
 OUTLOOK_BASE = 'http://www.spc.noaa.gov/products/outlook/archive/'
 OUTLOOK_PATTERN = r'\.{3} (.+) \.{3}\n\n([\d|\s|.|A-Z]+)*&&'
 OUTLOOK_PTS_PATTERN = r'(\S+)\s{3}((\d+\s+)+)'
@@ -29,6 +31,41 @@ def getpolycenter(poly):
         round(sum(x for x, y in poly) / polylength, 2),
         round(sum(y for x, y in poly) / polylength, 2)
     )
+
+def sethighestrisk(outlook):
+    """Gets and sets the highest risk for various sections of the outlook"""
+    #TODO what happens when there are multiple polys with the same risk... can't use that as a key then
+    for wxtype in ('tornado', 'wind', 'hail'):
+        if '0.60' in outlook['probabilistic'][wxtype]:
+            outlook['probabilistic'][wxtype]['max'] = '0.60'
+        elif '0.45' in outlook['probabilistic'][wxtype]:
+            outlook['probabilistic'][wxtype]['max'] = '0.45'
+        elif '0.30' in outlook['probabilistic'][wxtype]:
+            outlook['probabilistic'][wxtype]['max'] = '0.30'
+        elif '0.15' in outlook['probabilistic'][wxtype]:
+            outlook['probabilistic'][wxtype]['max'] = '0.15'
+        elif '0.10' in outlook['probabilistic'][wxtype]:
+            outlook['probabilistic'][wxtype]['max'] = '0.10'
+        elif '0.05' in outlook['probabilistic'][wxtype]:
+            outlook['probabilistic'][wxtype]['max'] = '0.05'
+        elif '0.02' in outlook['probabilistic'][wxtype]:
+            outlook['probabilistic'][wxtype]['max'] = '0.02'
+        else:
+            outlook['probabilistic'][wxtype]['max'] = None
+    if 'HIGH' in outlook['categorical']:
+        outlook['categorical']['max'] = 'HIGH'
+    elif 'MDT' in outlook['categorical']:
+        outlook['categorical']['max'] = 'MDT'
+    elif 'ENH' in outlook['categorical']:
+        outlook['categorical']['max'] = 'ENH'
+    elif 'SLGT' in outlook['categorical']:
+        outlook['categorical']['max'] = 'SLGT'
+    elif 'MGNL' in outlook['categorical']:
+        outlook['categorical']['max'] = 'MGNL'
+    elif 'TSTM' in outlook['categorical']:
+        outlook['categorical']['max'] = 'TSTM'
+    #TODO No max found? test max for each of these?
+    return outlook
 
 def parseoutlookpts(text):
     """parses a line into points"""
@@ -63,4 +100,5 @@ def parse(text, url):
             parsedoutlook['probabilistic']['wind'] = parseoutlookpts(ptsdata)
         elif group == 'CATEGORICAL':
             parsedoutlook['categorical'] = parseoutlookpts(ptsdata)
+    parsedoutlook = sethighestrisk(parsedoutlook)
     return parsedoutlook
