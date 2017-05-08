@@ -1,17 +1,12 @@
 """Simple script to fetch NWS text product data for multiple days in a range"""
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import outlook
+import stormdata
 import fshelper
-import json
 
-STARTDATE = date(2010, 6, 17)
-ENDDATE = date(2010, 6, 17)
-
-def savedata(path, filename, data):
-    """Writes data to file"""
-    with open(path + '/' + filename, 'w') as openedfile:
-        json.dump(data, openedfile, sort_keys=True, indent=2, ensure_ascii=False)
+STARTDATETIME = datetime(2010, 6, 17, 12, tzinfo=timezone.utc)
+ENDDATETIME = datetime(2010, 6, 18, 12, tzinfo=timezone.utc)
 
 def fetchdata(day):
     """Fetches all data for a specific day"""
@@ -24,15 +19,15 @@ def fetchdata(day):
 
     # Get day 1 13z
     day113z = outlook.process(day, '1300')
-    savedata(path, 'outlook_1300.json', day113z)
+    # savedata(path, 'outlook_1300.json', day113z)
 
     # Get day 1 1630z outlook
     day11630z = outlook.process(day, '1630')
-    savedata(path, 'outlook_1630.json', day11630z)
+    # savedata(path, 'outlook_1630.json', day11630z)
 
     # Get day 1 20z outlook
     day120z = outlook.process(day, '2000')
-    savedata(path, 'outlook_2000.json', day120z)
+    # savedata(path, 'outlook_2000.json', day120z)
 
     # Get MDs
     #TODO
@@ -40,10 +35,11 @@ def fetchdata(day):
     # Get Watches
     #TODO
 
-    # Get reports
-    #TODO
-
-CURRENT = STARTDATE
-while CURRENT <= ENDDATE:
+# Fetch and process individual daily data
+CURRENT = STARTDATETIME
+while CURRENT <= ENDDATETIME:
     fetchdata(CURRENT)
     CURRENT += timedelta(days=1)
+
+# Fetch and process bulk data
+stormdata.process(STARTDATETIME, ENDDATETIME)
