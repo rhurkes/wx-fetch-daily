@@ -1,4 +1,5 @@
 import io
+import os
 import re
 import requests
 import fshelper
@@ -47,36 +48,39 @@ def getcentroids(outlook):
         if wxtype == 'hail': shp_suffix = '_hail.shp'
         if wxtype == 'categorical': shp_suffix = '_cat.shp'
         shapefile_path = path + '/day1otlk_' + outlook['spcdate'] + '_' + producttime + shp_suffix
-        shapefile = gp.read_file(shapefile_path)
-        for prob in ('0.60', '0.45', '0.30', '0.15', '0.10', '0.05', '0.02', 'SIGN'):
-            if prob in outlook['probabilistic'][wxtype]:
-                if not prob == 'SIGN':
-                    intprob = int(prob[-2:])
-                data = shapefile[shapefile['DN'] == intprob].to_crs(epsg=4326) # WGS 84
-                if len(data) > 0:
-                    # TODO this currently only stores the last if there's multiple area polygons
-                    for index, row in data.iterrows():
-                        outlook['probabilistic'][wxtype][prob]['centroid'] = row['geometry'].centroid.coords[0]
+        if os.path.exists(shapefile_path):
+            shapefile = gp.read_file(shapefile_path)
+            for prob in ('0.60', '0.45', '0.30', '0.15', '0.10', '0.05', '0.02', 'SIGN'):
+                if prob in outlook['probabilistic'][wxtype]:
+                    if not prob == 'SIGN':
+                        intprob = int(prob[-2:])
+                    data = shapefile[shapefile['DN'] == intprob].to_crs(epsg=4326) # WGS 84
+                    if len(data) > 0:
+                        # TODO this currently only stores the last if there's multiple area polygons
+                        for index, row in data.iterrows():
+                            outlook['probabilistic'][wxtype][prob]['centroid'] = row['geometry'].centroid.coords[0]
+            del shapefile
     
     shapefile_path = path + '/day1otlk_' + outlook['spcdate'] + '_' + producttime + '_cat.shp'
-    shapefile = gp.read_file(shapefile_path)
-    cat_map = {
-        'TSTM':2,
-        'MGNL':3,
-        'SLGT':4,
-        'ENH':5,
-        'MDT':6,
-        'HIGH':8
-    }
-    for cat in cat_map:
-        data = shapefile[shapefile['DN'] == cat_map[cat]].to_crs(epsg=4326)
-        if len(data) > 0:
-            # TODO this currently only stores the last if there's multiple risk areas with same category
-            for index, row in data.iterrows():
-                if cat in outlook['categorical']:
-                    outlook['categorical'][cat]['centroid'] = row['geometry'].centroid.coords[0]
+    if os.path.exists(shapefile_path):
+        shapefile = gp.read_file(shapefile_path)
+        cat_map = {
+            'TSTM':2,
+            'MGNL':3,
+            'SLGT':4,
+            'ENH':5,
+            'MDT':6,
+            'HIGH':8
+        }
+        for cat in cat_map:
+            data = shapefile[shapefile['DN'] == cat_map[cat]].to_crs(epsg=4326)
+            if len(data) > 0:
+                # TODO this currently only stores the last if there's multiple risk areas with same category
+                for index, row in data.iterrows():
+                    if cat in outlook['categorical']:
+                        outlook['categorical'][cat]['centroid'] = row['geometry'].centroid.coords[0]
 
-    del shapefile
+        del shapefile
     return outlook
 
 def sethighestrisk(outlook):
