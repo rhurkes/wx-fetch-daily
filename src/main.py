@@ -14,22 +14,26 @@ def fetchdailydata(day):
     """Fetches and processes all data for a specific day"""
 
     path = day.strftime('data/%Y/%m/%d')
+    path_shapefile = path + '/shapefiles'
     fshelper.safedirs(path)
 
     # Get day 2 outlook
     #TODO
 
     # Get day 1 13z
-    #day113z = outlook.process(day, '1300')
-    #fshelper.savedata(path, 'outlook_1300.json', day113z)
+    outlook.getshapefiles(day, '1300', path_shapefile)
+    day113z = outlook.process(day, '1300')
+    fshelper.savedata(path, 'outlook_1300.json', day113z)
 
     # Get day 1 1630z outlook
-    #day11630z = outlook.process(day, '1630')
-    #fshelper.savedata(path, 'outlook_1630.json', day11630z)
+    outlook.getshapefiles(day, '1630', path_shapefile)
+    day11630z = outlook.process(day, '1630')
+    fshelper.savedata(path, 'outlook_1630.json', day11630z)
 
     # Get day 1 20z outlook
-    #day120z = outlook.process(day, '2000')
-    #fshelper.savedata(path, 'outlook_2000.json', day120z)
+    outlook.getshapefiles(day, '2000', path_shapefile)
+    day120z = outlook.process(day, '2000')
+    fshelper.savedata(path, 'outlook_2000.json', day120z)
 
     # Get MDs and Watches
     mdsandwatches = spcevent.processday(day)
