@@ -87,8 +87,6 @@ def buildmd(text):
     # center
     # watch probability
     # raw text
-    
-    print(md)
 
     # Get base64 image data
     response = requests.get(url)
