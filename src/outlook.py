@@ -1,5 +1,8 @@
+import io
 import re
 import requests
+import fshelper
+import zipfile
 
 # TODO calculate highest risk and highest prob for each risk type
 
@@ -102,3 +105,13 @@ def parse(text, url):
             parsedoutlook['categorical'] = parseoutlookpts(ptsdata)
     parsedoutlook = sethighestrisk(parsedoutlook)
     return parsedoutlook
+
+def getshapefiles(day, time, path):
+    year = day.strftime('%Y')
+    spcdate = year + day.strftime('%m%d')
+    url = '{}/{}/day1otlk_{}_{}-shp.zip'.format(OUTLOOK_BASE,year,spcdate,time)
+    response = requests.get(url)
+    if response.ok:
+        fshelper.safedirs(path)
+        zip = zipfile.ZipFile(io.BytesIO(response.content))
+        zip.extractall(path)
