@@ -11,7 +11,7 @@ from datetime import datetime
 
 OUTLOOK_BASE = 'http://www.spc.noaa.gov/products/outlook/archive/'
 OUTLOOK_PATTERN = r'\.{3} (.+) \.{3}\n\n([\d|\s|.|A-Z]+)*&&'
-OUTLOOK_PTS_PATTERN = r'(\S+)\s{3}((\d+\s+)+)'
+OUTLOOK_PTS_PATTERN = r'(\S+)\s+((\d+\s+)+)'
 
 def process(day, time):
     """Downloads, parses, and return JSON data"""
