@@ -22,9 +22,13 @@ def buildkml(day):
     end = '</Document></kml>'
     rootpath = day.strftime('data/%Y/%m/%d/')
 
-    outlook1300data = fshelper.loaddata(rootpath + 'outlook_1300.json')
-    outlook1630data = fshelper.loaddata(rootpath + 'outlook_1630.json')
-    outlook2000data = fshelper.loaddata(rootpath + 'outlook_2000.json')
+    try:
+        outlook1300data = fshelper.loaddata(rootpath + 'outlook_1300.json')
+        outlook1630data = fshelper.loaddata(rootpath + 'outlook_1630.json')
+        outlook2000data = fshelper.loaddata(rootpath + 'outlook_2000.json')
+    except FileNotFoundError:
+        # If there are any errors while loading data, don't build KML and exit early
+        return
 
     maxkey = outlook1300data['probabilistic']['tornado']['max']
     o13 = outlook1300data['probabilistic']['tornado'][maxkey]

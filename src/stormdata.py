@@ -11,6 +11,7 @@ import requests
 
 URL = 'http://www.spc.noaa.gov/wcm/data/Actual_tornadoes.csv'
 UTCZONE = pytz.timezone('US/Central')
+TORCSV_PATH = 'tmp/tornado.csv'
 
 def buildreport(line, utcdate, eventkey):
     report = {}
@@ -40,35 +41,39 @@ def parseasutc(line):
 
 def downloadcsv():
     """Downloads SPC Storm Data for tornadoes if it doesn't exist"""
-
     response = requests.get(URL, stream=True)
-    filepath = 'data/tornado.csv'
-    fshelper.safedirs('data')
-    with open(filepath, 'wb') as out_file:
+    with open(TORCSV_PATH, 'wb') as out_file:
         shutil.copyfileobj(response.raw, out_file)
+
+def checkreports(day):
+    path = day.strftime('data/%Y/%m/%d/')
+    if not os.path.exists(path + 'reports.json'):
+        fshelper.savedata(path, 'reports.json', {'tornadoes': []})
 
 def savefiles(reportdays):
     """Saves JSON files"""
     for day in reportdays:
         currentdt = datetime.strptime(day, '%Y-%m-%d')
         path = currentdt.strftime('data/%Y/%m/%d')
-        filename = day + '_reports.json'
         fshelper.safedirs(path)
-        fshelper.savedata(path, filename, reportdays[day])
+        fshelper.savedata(path, 'reports.json', reportdays[day])
 
 def process(startdate, enddate):
-    """Processes SPC Storm Data for tornadoes"""
+    """Processes SPC Storm Data for tornadoes.
+    Empty files for non-event days are created elsewhere"""
 
-    if not os.path.exists('data/tornado.csv'):
+    if not os.path.exists(TORCSV_PATH):
         downloadcsv()
     reportdays = {}
-    reader = csv.reader(open('data/tornado.csv', 'r'), delimiter=',')
+    reader = csv.reader(open(TORCSV_PATH, 'r'), delimiter=',')
+    paddedenddate = enddate + timedelta(days=1, hours=12)
+
     for line in reader:
         utcdt = parseasutc(line)
 
         if utcdt is None or utcdt < startdate:
             continue
-        elif utcdt > enddate:
+        elif utcdt > paddedenddate:
             break
 
         if int(utcdt.strftime('%H')) < 12:
@@ -78,8 +83,8 @@ def process(startdate, enddate):
             eventkey = utcdt.strftime('%Y-%m-%d')
 
         if eventkey not in reportdays:
-            reportdays[eventkey] = {'reports': []}
+            reportdays[eventkey] = {'tornadoes': []}
 
         report = buildreport(line, utcdt, eventkey)
-        reportdays[eventkey]['reports'].append(report)
+        reportdays[eventkey]['tornadoes'].append(report)
     savefiles(reportdays)

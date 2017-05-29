@@ -72,7 +72,6 @@ def buildmd(text):
     md['id'] = mdid
     utcdt = nwshelper.getutc(lines[4].strip())
     md['timestamp'] = nwshelper.toisostring(utcdt)
-    url = MD_BASE_URL + str(utcdt.year) + '/mcd' + mdid + '.gif'
     md['forecasters'] = re.findall(FORECASTER_PATTERN, body)[0].split('/')
     probability = re.findall(PROBABILITY_PATTERN, body)
     if len(probability) > 0:
@@ -95,9 +94,8 @@ def buildmd(text):
     md['raw'] = body.strip()
 
     # Get base64 image data
-    response = requests.get(url)
-    #if response.status_code == requests.codes.ok:
-        #md['imageData'] = base64.b64encode(response.content)
+    url = MD_BASE_URL + str(utcdt.year) + '/mcd' + mdid + '.gif'
+    md['imageData'] = url
     return md
 
 def process(mdurls, path):

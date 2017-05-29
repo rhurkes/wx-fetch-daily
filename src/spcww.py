@@ -69,11 +69,8 @@ def buildww(text, wwid):
     if len(matches) > 0:
         watch['mdReference'] = int(matches[0])
 
-    # Get base64 image data
-    #imgurl = 'http://www.spc.noaa.gov/products/watch/' + str(utcdt.year) + '/ww' + wwid + '_radar_init.gif'
-    #response = requests.get(imgurl)
-    #if response.status_code == requests.codes.ok:
-    #    watch['imageData'] = base64.b64encode(response.content)
+    imgurl = 'http://www.spc.noaa.gov/products/watch/' + str(utcdt.year) + '/ww' + wwid + '_radar_init.gif'
+    watch['imageURL'] = imgurl
     return watch
 
 def process(wwurls, path):
