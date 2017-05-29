@@ -98,9 +98,10 @@ def buildmd(text):
     md['imageData'] = url
     return md
 
-def process(mdurls, path):
+def process(mdurls, path, day):
     """TODO"""
     for url in mdurls:
-        response = requests.get(url)
-        md = buildmd(response.text)
-        fshelper.savedata(path + '/md', md['id'] + '.json', md)
+        filename = re.findall(r'md\d{4}', url)[0]
+        mdfile = fshelper.gettmpfile(url, day, filename + '.html')
+        md = buildmd(mdfile)
+        fshelper.savedata(path + '/md', filename + '.json', md)

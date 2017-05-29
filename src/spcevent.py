@@ -12,22 +12,20 @@ URL_BASE = 'http://www.spc.noaa.gov/'
 
 def processday(day):
     """TODO"""
-
     path = day.strftime('data/%Y/%m/%d')
-    fshelper.safedirs(path)
     fshelper.safedirs(path + '/md')
     fshelper.safedirs(path + '/ww')
     url = 'http://www.spc.noaa.gov/exper/archive/leftmenu3.php?date=' + day.strftime('%Y%m%d')
-    response = requests.get(url)
+    eventfile = fshelper.gettmpfile(url, day, 'spcevent.html')
     mdurls = []
     wwurls = []
 
-    for match in re.finditer(MD_PATTERN, response.text):
+    for match in re.finditer(MD_PATTERN, eventfile):
         mdurl = match.group(1).replace('../../', URL_BASE)
         mdurls.append(mdurl)
-    spcmd.process(mdurls, path)
+    spcmd.process(mdurls, path, day)
 
-    for match in re.finditer(WW_PATTERN, response.text):
+    for match in re.finditer(WW_PATTERN, eventfile):
         wwurl = match.group(1).replace('../../', URL_BASE)
         wwurls.append(wwurl)
-    spcww.process(wwurls, path)
+    spcww.process(wwurls, path, day)

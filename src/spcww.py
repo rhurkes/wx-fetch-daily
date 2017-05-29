@@ -26,8 +26,8 @@ def parsebody(body):
 def buildww(text, wwid):
     """TODO"""
     watch = {'id': wwid}
-    startpre = text.index('<pre>') + 5
-    endpre = text.index('</pre>')
+    startpre = text.find('<pre>') + 5
+    endpre = text.find('</pre>')
     body = text[startpre:endpre].strip()
     watch['raw'] = body
     lines = body.split('\n')
@@ -73,10 +73,11 @@ def buildww(text, wwid):
     watch['imageURL'] = imgurl
     return watch
 
-def process(wwurls, path):
+def process(wwurls, path, day):
     """TODO"""
     for url in wwurls:
-        response = requests.get(url)
+        filename = re.findall(r'ww\d{4}', url)[0]
         wwid = getidfromurl(url)
-        ww = buildww(response.text, wwid)
-        fshelper.savedata(path + '/ww', wwid + '.json', ww)
+        wwfile = fshelper.gettmpfile(url, day, filename + '.html')
+        ww = buildww(wwfile, wwid)
+        fshelper.savedata(path + '/ww', filename + '.json', ww)

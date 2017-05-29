@@ -1,4 +1,3 @@
-import io
 import os
 import re
 import requests
@@ -23,9 +22,10 @@ def process(day, time):
     return parse(response.text, url, spcdate, time)
 
 def getcentroids(outlook):
+    """TODO"""
     producttime = outlook['producttime']
-    day = datetime.strptime(outlook['spcdate'],'%Y%m%d')
-    path = day.strftime('data/%Y/%m/%d/shapefiles')
+    day = datetime.strptime(outlook['spcdate'], '%Y%m%d')
+    path = day.strftime('tmp/%Y/%m/%d/shapefiles')
     for wxtype in ('tornado', 'wind', 'hail'):
         if wxtype == 'tornado': shp_suffix = '_torn.shp'
         if wxtype == 'wind': shp_suffix = '_wind.shp'
@@ -44,7 +44,7 @@ def getcentroids(outlook):
                         for index, row in data.iterrows():
                             outlook['probabilistic'][wxtype][prob]['centroid'] = row['geometry'].centroid.coords[0]
             del shapefile
-    
+
     shapefile_path = path + '/day1otlk_' + outlook['spcdate'] + '_' + producttime + '_cat.shp'
     if os.path.exists(shapefile_path):
         shapefile = gp.read_file(shapefile_path)
@@ -120,13 +120,14 @@ def parseoutlookpts(text):
 def parse(text, url, spcdate, time):
     """parses an outlook"""
     lines = text.split('\n')
-    parsedoutlook = {'probabilistic': { 'tornado': {}, 'hail': {}, 'wind': {}}, 'categorical': {}}
+    parsedoutlook = {'probabilistic': {'tornado': {}, 'hail': {}, 'wind': {}}, 'categorical': {}}
     parsedoutlook['originURL'] = url
     parsedoutlook['description'] = lines[1]
     parsedoutlook['issuer'] = lines[2]
     parsedoutlook['timestamp'] = lines[3]
     parsedoutlook['spcdate'] = spcdate
     parsedoutlook['producttime'] = time
+
     for match in re.finditer(OUTLOOK_PATTERN, text):
         group = match.group(1)
         ptsdata = match.group(2)
@@ -139,16 +140,19 @@ def parse(text, url, spcdate, time):
                 parsedoutlook['probabilistic']['wind'] = parseoutlookpts(ptsdata)
             elif group == 'CATEGORICAL':
                 parsedoutlook['categorical'] = parseoutlookpts(ptsdata)
+
     parsedoutlook = sethighestrisk(parsedoutlook)
     parsedoutlook = getcentroids(parsedoutlook)
     return parsedoutlook
 
-def getshapefiles(day, time, path):
+def getshapefiles(day, time):
+    """TODO"""
+    path = day.strftime('tmp/%Y/%m/%d/')
     year = day.strftime('%Y')
     spcdate = year + day.strftime('%m%d')
-    url = '{}/{}/day1otlk_{}_{}-shp.zip'.format(OUTLOOK_BASE,year,spcdate,time)
-    response = requests.get(url)
-    if response.ok:
-        fshelper.safedirs(path)
-        zip = zipfile.ZipFile(io.BytesIO(response.content))
-        zip.extractall(path)
+    filename = 'day1otlk_{}_{}-shp.zip'.format(spcdate, time)
+    url = '{}/{}/{}'.format(OUTLOOK_BASE, year, filename)
+    fshelper.gettmpfile(url, day, filename)
+    fshelper.safedirs(path + '/shapefiles')
+    tmpzip = zipfile.ZipFile(path + filename)
+    tmpzip.extractall(path + '/shapefiles')

@@ -41,6 +41,7 @@ def parseasutc(line):
 
 def downloadcsv():
     """Downloads SPC Storm Data for tornadoes if it doesn't exist"""
+    fshelper.safedirs('tmp')
     response = requests.get(URL, stream=True)
     with open(TORCSV_PATH, 'wb') as out_file:
         shutil.copyfileobj(response.raw, out_file)
