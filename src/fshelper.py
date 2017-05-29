@@ -11,7 +11,7 @@ def loaddata(path):
     with open(path) as jsondata:
         return json.load(jsondata)
 
-def gettmpfile(url, day, filename):
+def gettmpfile(url, day, filename, istext):
     """Downloads and caches a file to the tmp dir if necessary"""
     path = day.strftime('tmp/%Y/%m/%d/')
     safedirs(path)
@@ -19,10 +19,10 @@ def gettmpfile(url, day, filename):
         response = requests.get(url)
         with open(path + filename, 'wb') as out_file:
             out_file.write(response.content)
-        return response.text
+        return response.text if istext is True else response.content
     else:
         with open(path + filename, 'r') as in_file:
-            return in_file.read()
+            return in_file.read() if istext is True else in_file
 
 def savedata(path, filename, data):
     """Writes data to file"""

@@ -17,21 +17,23 @@ def fetchdailydata(day):
     fshelper.safedirs(path)
 
     # Get day 2 outlook
-    #TODO
-    # prevday = day - delta(days=1)
+    prevday = day - timedelta(days=1)
+    outlook.getshapefiles(day, '1700', True)
+    day2 = outlook.processday2(prevday, day, '1730')
+    fshelper.savedata(path, 'outlook_day2_1730.json', day2)
 
     # Get day 1 13z
-    outlook.getshapefiles(day, '1300')
+    outlook.getshapefiles(day, '1300', False)
     day113z = outlook.process(day, '1300')
     fshelper.savedata(path, 'outlook_1300.json', day113z)
 
     # Get day 1 1630z outlook
-    outlook.getshapefiles(day, '1630')
+    outlook.getshapefiles(day, '1630', False)
     day11630z = outlook.process(day, '1630')
     fshelper.savedata(path, 'outlook_1630.json', day11630z)
 
     # Get day 1 20z outlook
-    outlook.getshapefiles(day, '2000')
+    outlook.getshapefiles(day, '2000', False)
     day120z = outlook.process(day, '2000')
     fshelper.savedata(path, 'outlook_2000.json', day120z)
 

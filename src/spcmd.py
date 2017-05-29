@@ -102,6 +102,6 @@ def process(mdurls, path, day):
     """TODO"""
     for url in mdurls:
         filename = re.findall(r'md\d{4}', url)[0]
-        mdfile = fshelper.gettmpfile(url, day, filename + '.html')
+        mdfile = fshelper.gettmpfile(url, day, filename + '.html', True)
         md = buildmd(mdfile)
         fshelper.savedata(path + '/md', filename + '.json', md)

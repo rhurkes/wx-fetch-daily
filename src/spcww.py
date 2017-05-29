@@ -78,6 +78,6 @@ def process(wwurls, path, day):
     for url in wwurls:
         filename = re.findall(r'ww\d{4}', url)[0]
         wwid = getidfromurl(url)
-        wwfile = fshelper.gettmpfile(url, day, filename + '.html')
+        wwfile = fshelper.gettmpfile(url, day, filename + '.html', True)
         ww = buildww(wwfile, wwid)
         fshelper.savedata(path + '/ww', filename + '.json', ww)

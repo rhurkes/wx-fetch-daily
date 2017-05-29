@@ -16,7 +16,7 @@ def processday(day):
     fshelper.safedirs(path + '/md')
     fshelper.safedirs(path + '/ww')
     url = 'http://www.spc.noaa.gov/exper/archive/leftmenu3.php?date=' + day.strftime('%Y%m%d')
-    eventfile = fshelper.gettmpfile(url, day, 'spcevent.html')
+    eventfile = fshelper.gettmpfile(url, day, 'spcevent.html', True)
     mdurls = []
     wwurls = []
 

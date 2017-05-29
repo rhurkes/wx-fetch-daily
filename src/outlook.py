@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 import re
 import requests
@@ -17,9 +18,19 @@ def process(day, time):
     """Downloads, parses, and return JSON data"""
     year = day.strftime('%Y')
     spcdate = year + day.strftime('%m%d')
-    url = OUTLOOK_BASE + year + '/KWNSPTSDY1_' + spcdate + time + '.txt'
-    response = requests.get(url)
-    return parse(response.text, url, spcdate, time)
+    filename = '/KWNSPTSDY1_' + spcdate + time + '.txt'
+    url = OUTLOOK_BASE + year + filename
+    outlookfile = fshelper.gettmpfile(url, day, filename, True)
+    return parse(outlookfile, url, spcdate, time)
+
+def processday2(prevday, day, time):
+    """Downloads, parses, and returns JSON data for a Day 2 outlook"""
+    year = prevday.strftime('%Y')
+    spcdate = year + prevday.strftime('%m%d')
+    filename = '/KWNSPTSDY2_' + spcdate + time + '.txt'
+    url = OUTLOOK_BASE + year + filename
+    outlookfile = fshelper.gettmpfile(url, day, filename, True)
+    return parse(outlookfile, url, spcdate, time)
 
 def getcentroids(outlook):
     """TODO"""
@@ -27,10 +38,14 @@ def getcentroids(outlook):
     day = datetime.strptime(outlook['spcdate'], '%Y%m%d')
     path = day.strftime('tmp/%Y/%m/%d/shapefiles')
     for wxtype in ('tornado', 'wind', 'hail'):
-        if wxtype == 'tornado': shp_suffix = '_torn.shp'
-        if wxtype == 'wind': shp_suffix = '_wind.shp'
-        if wxtype == 'hail': shp_suffix = '_hail.shp'
-        if wxtype == 'categorical': shp_suffix = '_cat.shp'
+        if wxtype == 'tornado':
+            shp_suffix = '_torn.shp'
+        if wxtype == 'wind':
+            shp_suffix = '_wind.shp'
+        if wxtype == 'hail':
+            shp_suffix = '_hail.shp'
+        if wxtype == 'categorical':
+            shp_suffix = '_cat.shp'
         shapefile_path = path + '/day1otlk_' + outlook['spcdate'] + '_' + producttime + shp_suffix
         if os.path.exists(shapefile_path):
             shapefile = gp.read_file(shapefile_path)
@@ -145,14 +160,17 @@ def parse(text, url, spcdate, time):
     parsedoutlook = getcentroids(parsedoutlook)
     return parsedoutlook
 
-def getshapefiles(day, time):
+def getshapefiles(day, time, isday2):
     """TODO"""
+    # http://www.spc.noaa.gov/products/outlook/archive/2017/day2otlk_20170526_1700-shp.zip
+    targetday = day if isday2 is False else day - timedelta(days=1)
+    otlkday = 'day2otlk' if isday2 is True else 'day1otlk'
     path = day.strftime('tmp/%Y/%m/%d/')
-    year = day.strftime('%Y')
-    spcdate = year + day.strftime('%m%d')
-    filename = 'day1otlk_{}_{}-shp.zip'.format(spcdate, time)
+    year = targetday.strftime('%Y')
+    spcdate = year + targetday.strftime('%m%d')
+    filename = '{}_{}_{}-shp.zip'.format(otlkday, spcdate, time)
     url = '{}/{}/{}'.format(OUTLOOK_BASE, year, filename)
-    fshelper.gettmpfile(url, day, filename)
+    fshelper.gettmpfile(url, day, filename, False)
     fshelper.safedirs(path + '/shapefiles')
     tmpzip = zipfile.ZipFile(path + filename)
     tmpzip.extractall(path + '/shapefiles')
