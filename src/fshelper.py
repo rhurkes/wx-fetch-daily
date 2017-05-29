@@ -12,7 +12,7 @@ def loaddata(path):
 def savedata(path, filename, data):
     """Writes data to file"""
     with open(path + '/' + filename, 'w') as openedfile:
-        json.dump(data, openedfile, sort_keys=True, indent=2, ensure_ascii=False)
+        openedfile.write(json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False))
 
 def safedirs(path):
     """Safely creates all directories in a path if they don't exist"""

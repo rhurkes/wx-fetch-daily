@@ -3,6 +3,7 @@ import os
 import re
 import requests
 import fshelper
+import nwshelper
 import zipfile
 import geopandas as gp
 from datetime import datetime
@@ -20,23 +21,6 @@ def process(day, time):
     url = OUTLOOK_BASE + year + '/KWNSPTSDY1_' + spcdate + time + '.txt'
     response = requests.get(url)
     return parse(response.text, url, spcdate, time)
-
-def parsenwspt(text):
-    """Parses a line of NWS points representing a polygon"""
-    lat = int(text[0:4]) / 100
-    lon = int(text[4:])
-    if lon < 1000:
-        lon += 10000
-    return (lon / -100, lat)
-
-def getpolycenter(poly):
-    """Gets center of a polygon"""
-    polylength = len(poly)
-
-    return (
-        round(sum(x for x, y in poly) / polylength, 2),
-        round(sum(y for x, y in poly) / polylength, 2)
-    )
 
 def getcentroids(outlook):
     producttime = outlook['producttime']
@@ -87,6 +71,8 @@ def sethighestrisk(outlook):
     """Gets and sets the highest risk for various sections of the outlook"""
     #TODO what happens when there are multiple polys with the same risk... can't use that as a key then
     for wxtype in ('tornado', 'wind', 'hail'):
+        outlook['probabilistic'][wxtype]['max'] = None
+
         if '0.60' in outlook['probabilistic'][wxtype]:
             outlook['probabilistic'][wxtype]['max'] = '0.60'
         elif '0.45' in outlook['probabilistic'][wxtype]:
@@ -101,8 +87,7 @@ def sethighestrisk(outlook):
             outlook['probabilistic'][wxtype]['max'] = '0.05'
         elif '0.02' in outlook['probabilistic'][wxtype]:
             outlook['probabilistic'][wxtype]['max'] = '0.02'
-        else:
-            outlook['probabilistic'][wxtype]['max'] = None
+
     if 'HIGH' in outlook['categorical']:
         outlook['categorical']['max'] = 'HIGH'
     elif 'MDT' in outlook['categorical']:
@@ -127,15 +112,15 @@ def parseoutlookpts(text):
         groupdict[section] = {'points': []}
         for innermatch in re.finditer(r'\d+', pts):
             if innermatch.group(0) != '99999999':
-                parsedpts = parsenwspt(innermatch.group(0))
+                parsedpts = nwshelper.parsenwspt(innermatch.group(0))
                 groupdict[section]['points'].append(parsedpts)
-        groupdict[section]['center'] = getpolycenter(groupdict[section]['points'])
+        groupdict[section]['center'] = nwshelper.getpolycenter(groupdict[section]['points'])
     return groupdict
 
 def parse(text, url, spcdate, time):
     """parses an outlook"""
     lines = text.split('\n')
-    parsedoutlook = {'probabilistic': {}, 'categorical': {}}
+    parsedoutlook = {'probabilistic': { 'tornado': {}, 'hail': {}, 'wind': {}}, 'categorical': {}}
     parsedoutlook['originURL'] = url
     parsedoutlook['description'] = lines[1]
     parsedoutlook['issuer'] = lines[2]
@@ -145,14 +130,15 @@ def parse(text, url, spcdate, time):
     for match in re.finditer(OUTLOOK_PATTERN, text):
         group = match.group(1)
         ptsdata = match.group(2)
-        if group == 'TORNADO':
-            parsedoutlook['probabilistic']['tornado'] = parseoutlookpts(ptsdata)
-        elif group == 'HAIL':
-            parsedoutlook['probabilistic']['hail'] = parseoutlookpts(ptsdata)
-        elif group == 'WIND':
-            parsedoutlook['probabilistic']['wind'] = parseoutlookpts(ptsdata)
-        elif group == 'CATEGORICAL':
-            parsedoutlook['categorical'] = parseoutlookpts(ptsdata)
+        if ptsdata is not None:
+            if group == 'TORNADO':
+                parsedoutlook['probabilistic']['tornado'] = parseoutlookpts(ptsdata)
+            elif group == 'HAIL':
+                parsedoutlook['probabilistic']['hail'] = parseoutlookpts(ptsdata)
+            elif group == 'WIND':
+                parsedoutlook['probabilistic']['wind'] = parseoutlookpts(ptsdata)
+            elif group == 'CATEGORICAL':
+                parsedoutlook['categorical'] = parseoutlookpts(ptsdata)
     parsedoutlook = sethighestrisk(parsedoutlook)
     parsedoutlook = getcentroids(parsedoutlook)
     return parsedoutlook
