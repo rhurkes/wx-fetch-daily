@@ -7,8 +7,8 @@ import stormdata
 import fshelper
 import kmlhelper
 
-STARTDATETIME = datetime(2010, 6, 17, tzinfo=timezone.utc)
-ENDDATETIME = datetime(2010, 6, 17, tzinfo=timezone.utc)
+STARTDATETIME = datetime(2015, 12, 14, tzinfo=timezone.utc)
+ENDDATETIME = datetime(2015, 12, 14, tzinfo=timezone.utc)
 
 def fetchdailydata(day):
     """Fetches and processes all data for a specific day"""
@@ -36,14 +36,17 @@ def fetchdailydata(day):
     fshelper.savedata(path, 'outlook_2000.json', day120z)
 
     # Get MDs and Watches
-    mdsandwatches = spcevent.processday(day)
+    spcevent.processday(day)
 
 # Fetch and process bulk data first
+print('Processing bulk data...')
 stormdata.process(STARTDATETIME, ENDDATETIME)
 
 # Fetch and process individual daily data
+print('Processing individual daily data...')
 CURRENT = STARTDATETIME
 while CURRENT <= ENDDATETIME:
+    print(CURRENT)
     fetchdailydata(CURRENT)
     kmlhelper.buildkml(CURRENT)
     CURRENT += timedelta(days=1)
